@@ -38,6 +38,5 @@ Thumbs.db
 
 # Excluded Vault & Documentation
 vault/
-CODEBASE_EXPLAINED.md
 PROMPTS.md
 meeting-summarizer-build-spec.md

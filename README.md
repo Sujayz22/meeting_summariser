@@ -1,6 +1,6 @@
 # 🎙️ Meeting Summarizer
 
-A full-stack, production-grade application that converts raw meeting recordings into accurate transcripts via **Sarvam AI STT** and generates structured executive summaries, key decisions, and action items via **Google Gemini AI (Gemini 3.6 Flash)**.
+A full-stack application that converts raw meeting recordings into accurate transcripts via **Sarvam AI STT** and generates structured executive summaries, key decisions, and action items via **Google Gemini AI (Gemini 3.6 Flash)**.
 
 ---
 
@@ -19,14 +19,6 @@ A full-stack, production-grade application that converts raw meeting recordings 
                                                                                                    │
                                                                                         [PostgreSQL Database]
 ```
-
----
-
-## 📚 Obsidian Project Vault (AI Token Usage Optimization)
-
-This project features an embedded **Obsidian Vault** located in [`/vault`](file:///d:/Projects/meeting_summariser/vault/00-Index.md) designed to track project status, architecture, module contracts, and prompt iterations.
-
-> **Token Reduction**: By partitioning system context into focused, modular Markdown notes (e.g. `vault/03-Modules/Backend-API.md`), human developers and AI assistants can reference small target documents instead of re-parsing massive specs or codebases.
 
 ---
 
@@ -168,7 +160,3 @@ curl -X POST http://localhost:5000/api/meetings/8f3b2d10-e74a-4a2b-b912-3a5619d0
 ```
 
 ---
-
-## 📄 Documentation Links
-- [Obsidian Index Note](file:///d:/Projects/meeting_summariser/vault/00-Index.md)
-- [Prompt Engineering Log](file:///d:/Projects/meeting_summariser/PROMPTS.md)
