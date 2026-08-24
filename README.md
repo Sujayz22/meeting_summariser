@@ -1,8 +1,13 @@
+
+
+
 # 🎙️ Meeting Summarizer
 
 A full-stack application that converts raw meeting recordings into accurate transcripts via **Sarvam AI STT** and generates structured executive summaries, key decisions, and action items via **Google Gemini AI (Gemini 3.6 Flash)**.
 
----
+# Demo Video:
+
+https://github.com/user-attachments/assets/f46a192b-ac1d-464b-aace-402d059a5ab6
 
 ## 📐 Architecture Diagram
 
