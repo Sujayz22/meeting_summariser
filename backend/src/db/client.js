@@ -10,9 +10,44 @@ const pool = new Pool({
   connectionTimeoutMillis: 1000,
 });
 
+const fs = require('fs');
+const path = require('path');
+
+const memoryDbFile = path.join(__dirname, '../../uploads/memory_db.json');
+
 // ─── In-memory fallback (used when Postgres is unavailable locally) ───────────
 const memoryStore = new Map();
 let useMemoryFallback = process.env.DISABLE_POSTGRES === 'true';
+
+function loadMemoryStore() {
+  try {
+    if (fs.existsSync(memoryDbFile)) {
+      const data = fs.readFileSync(memoryDbFile, 'utf8');
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) {
+        parsed.forEach(([id, row]) => memoryStore.set(id, row));
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load local fallback DB:', err);
+  }
+}
+
+function persistMemoryStore() {
+  try {
+    const uploadDir = path.dirname(memoryDbFile);
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const entries = [...memoryStore.entries()];
+    fs.writeFileSync(memoryDbFile, JSON.stringify(entries, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Failed to persist local fallback DB:', err);
+  }
+}
+
+// Load existing persisted memory store if available
+loadMemoryStore();
 
 pool.on('error', () => {
   useMemoryFallback = true;
@@ -58,6 +93,7 @@ function handleMemoryQuery(text, params) {
       updated_at: now,
     };
     memoryStore.set(id, row);
+    persistMemoryStore();
     return { rows: [row], rowCount: 1 };
   }
 
@@ -106,6 +142,7 @@ function handleMemoryQuery(text, params) {
 
     row.updated_at = new Date();
     memoryStore.set(id, row);
+    persistMemoryStore();
     return { rows: [row], rowCount: 1 };
   }
 

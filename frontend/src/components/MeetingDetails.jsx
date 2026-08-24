@@ -119,12 +119,13 @@ function StatusBadge({ status }) {
 
 /* ── Main component ───────────────────────────────────────────────────── */
 export default function MeetingDetails({ meetingId, onNewUpload }) {
-  const [meeting,        setMeeting]        = useState(null);
-  const [loading,        setLoading]        = useState(true);
-  const [fetchError,     setFetchError]     = useState(null);
-  const [resummarising,  setResummarising]  = useState(false);
-  const [transcriptOpen, setTranscriptOpen] = useState(false);
-  const [completedTasks, setCompletedTasks] = useState(new Set());
+  const [meeting,          setMeeting]          = useState(null);
+  const [loading,          setLoading]          = useState(true);
+  const [fetchError,       setFetchError]       = useState(null);
+  const [fetchErrorStatus, setFetchErrorStatus] = useState(null);
+  const [resummarising,    setResummarising]    = useState(false);
+  const [transcriptOpen,   setTranscriptOpen]   = useState(false);
+  const [completedTasks,   setCompletedTasks]   = useState(new Set());
   const pollingRef = useRef(null);
 
   const toggleTask = (index) => {
@@ -142,27 +143,38 @@ export default function MeetingDetails({ meetingId, onNewUpload }) {
   const fetchMeeting = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/api/meetings/${meetingId}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try {
+          const d = await res.json();
+          if (d.error) msg = d.error;
+        } catch {}
+        const err = new Error(msg);
+        err.status = res.status;
+        throw err;
+      }
       const data = await res.json();
       setMeeting(data);
       setFetchError(null);
+      setFetchErrorStatus(null);
       return data;
     } catch (err) {
       setFetchError(err.message);
+      setFetchErrorStatus(err.status || null);
       return null;
     } finally {
       setLoading(false);
     }
   }, [meetingId]);
 
-  /* Start polling; stop when terminal status reached */
+  /* Start polling; stop when terminal status reached or if fetch fails */
   useEffect(() => {
     let cancelled = false;
 
     const tick = async () => {
       const data = await fetchMeeting();
       if (cancelled) return;
-      if (data && TERMINAL_STATUSES.has(data.status)) return; // stop polling
+      if (!data || TERMINAL_STATUSES.has(data.status)) return; // stop polling on error or terminal state
       pollingRef.current = setTimeout(tick, POLL_INTERVAL_MS);
     };
 
@@ -212,16 +224,31 @@ export default function MeetingDetails({ meetingId, onNewUpload }) {
 
   /* ─── Render: fetch error ─── */
   if (fetchError && !meeting) {
+    const is404 = fetchErrorStatus === 404;
     return (
       <div className="glass-card fade-in">
-        <div className="error-banner">
-          <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-          <span>Could not load meeting — {fetchError}. Is the backend running?</span>
+        <div className="error-banner" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <AlertTriangle size={18} style={{ color: 'var(--amber)', flexShrink: 0 }} />
+            <strong style={{ fontSize: '1rem' }}>
+              {is404 ? 'Meeting Not Found (404)' : 'Error Loading Meeting'}
+            </strong>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.88rem', color: '#cbd5e1' }}>
+            {is404
+              ? `Meeting "${meetingId}" was not found. If the backend was recently restarted without a persistent database, previous temporary session data may no longer exist.`
+              : `Could not load meeting (${fetchError}). Please verify that the backend API server is running.`}
+          </p>
         </div>
-        <div style={{ marginTop: '1rem' }}>
-          <button className="btn btn-secondary" onClick={() => { setLoading(true); fetchMeeting(); }}>
-            <RefreshCw size={14} /> Retry
+        <div style={{ marginTop: '1.25rem', display: 'flex', gap: '0.75rem' }}>
+          <button className="btn btn-primary" onClick={onNewUpload}>
+            <Plus size={14} /> Upload New Recording
           </button>
+          {!is404 && (
+            <button className="btn btn-secondary" onClick={() => { setLoading(true); fetchMeeting(); }}>
+              <RefreshCw size={14} /> Retry
+            </button>
+          )}
         </div>
       </div>
     );
